@@ -1,38 +1,76 @@
 #!/usr/bin/env python3
-"""Authentication module for the API.
+""" Auth module
 """
-import re
-from typing import List, TypeVar
 from flask import request
+from typing import List, TypeVar
+import os
 
 
-class Auth:
-    """Authentication class.
-    """
+class Auth():
+    """Auth class"""
+
     def require_auth(self, path: str, excluded_paths: List[str]) -> bool:
-        """Checks if a path requires authentication.
         """
-        if path is not None and excluded_paths is not None:
-            for exclusion_path in map(lambda x: x.strip(), excluded_paths):
-                pattern = ''
-                if exclusion_path[-1] == '*':
-                    pattern = '{}.*'.format(exclusion_path[0:-1])
-                elif exclusion_path[-1] == '/':
-                    pattern = '{}/*'.format(exclusion_path[0:-1])
-                else:
-                    pattern = '{}/*'.format(exclusion_path)
-                if re.match(pattern, path):
+        Determines whether a given path requires authentication or not
+        Args:
+            - path(str): Url path to be checked
+            - excluded_paths(List of str): List of paths that do not require
+              authentication
+        Return:
+            - True if path is not in excluded_paths, else False
+        """
+        if path is None:
+            return True
+
+        if excluded_paths is None or excluded_paths == []:
+            return True
+
+        if path in excluded_paths:
+            return False
+
+        for excluded_path in excluded_paths:
+            if excluded_path.startswith(path):
+                return False
+            elif path.startswith(excluded_path):
+                return False
+            elif excluded_path[-1] == "*":
+                if path.startswith(excluded_path[:-1]):
                     return False
+
         return True
 
     def authorization_header(self, request=None) -> str:
-        """Gets the authorization header field from the request.
+        """_summary_
+
+        Args:
+            request (_type_, optional): _description_. Defaults to None.
+
+        Returns:
+                        str: _description_
         """
-        if request is not None:
-            return request.headers.get('Authorization', None)
-        return None
+        if request is None:
+            return None
+        # get header from the request
+        header = request.headers.get('Authorization')
+
+        if header is None:
+            return None
+
+        return header
 
     def current_user(self, request=None) -> TypeVar('User'):
-        """Gets the current user from the request.
+        """_summary_
         """
+
         return None
+
+    def session_cookie(self, request=None):
+        """_summary_
+
+        Args:
+            request (_type_, optional): _description_. Defaults to None.
+        """
+        if request is None:
+            return None
+        session_name = os.getenv('SESSION_NAME')
+        return request.cookies.get(session_name)
